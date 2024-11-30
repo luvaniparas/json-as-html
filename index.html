@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JSON Form</title>
+  </head>
+
+  <body>
+    <h2>JSON Form</h2>
+
+    <form id="json-form" onsubmit="return handleSubmit(event)">
+      <!-- JSON Form Fields will be rendered here -->
+    </form>
+
+    <script>
+      const SUBMIT_SUCCESS_MESSAGE = "Form submitted successfully!";
+
+      // JSON data for form generation
+      const formFields = [
+        {
+          key: "user_name",
+          label: "Name",
+          type: "text",
+          maxLength: 50,
+        },
+        {
+          key: "mobile_number",
+          label: "Mobile number",
+          type: "phoneNumber",
+        },
+        {
+          key: "email",
+          label: "Email",
+          type: "email",
+        },
+      ];
+
+      /**
+       * Creates a new HTML button element and sets its type and text content.
+       *
+       * @param {Object} data - An object containing the button's properties.
+       * @param {string} [data.type] - The type of the button (e.g. "button", "submit", etc.).
+       * @param {string} [data.label] - The text content of the button.
+       *
+       * @returns {HTMLElement} The created button element.
+       */
+      const createButton = (data) => {
+        const button = document.createElement("button");
+        button.setAttribute("type", data?.type);
+        button.textContent = data?.label;
+
+        return button;
+      };
+
+      /**
+       * Creates a new HTML label element and sets its 'for' attribute and text content.
+       *
+       * @param {Object} data - An object containing the label's properties.
+       * @param {string} [data.key] - The value of the 'for' attribute, referencing the corresponding form element.
+       * @param {string} [data.label] - The text content of the label.
+       *
+       * @returns {HTMLElement} The created label element.
+       */
+      const createLabel = (data) => {
+        const label = document.createElement("label");
+        label.setAttribute("for", data?.key);
+        label.textContent = `${data?.label}: `;
+
+        return label;
+      };
+
+      /**
+       * Creates a new HTML input element and sets its attributes.
+       *
+       * @param {Object} data - An object containing the input's properties.
+       * @param {string} [data.type] - The type of the input (e.g. "text", "email", "password", etc.).
+       * @param {string} [data.key] - The value of the 'id' and 'name' attributes.
+       * @param {string} [data.label] - The text used in the placeholder attribute.
+       * @param {number} [data.maxLength] - The maximum length of the input value.
+       *
+       * @returns {HTMLElement} The created input element.
+       */
+      const createInput = (data) => {
+        const input = document.createElement("input");
+        input.setAttribute("type", data?.type);
+        input.setAttribute("id", data?.key);
+        input.setAttribute("name", data?.key);
+        input.setAttribute("placeholder", `Enter ${data?.label}`);
+
+        // Add maxlength to text-type inputs if defined
+        if (data?.maxLength) {
+          input.setAttribute("maxlength", data?.maxLength);
+        }
+
+        return input;
+      };
+
+      /**
+       * Creates a new HTML div element and sets its text content.
+       *
+       * @param {Object} data - An object containing the div's properties.
+       * @param {string} [data.label] - The text content of the div.
+       *
+       * @returns {HTMLElement} The created div element.
+       */
+      const createDiv = (data) => {
+        const div = document.createElement("div");
+        div.textContent = data?.label;
+
+        return div;
+      };
+
+      /**
+       * Creates a new HTML line break element.
+       *
+       * @returns {HTMLElement} The created line break element.
+       */
+      const createLineBreak = () => {
+        const lineBreak = document.createElement("br");
+        return lineBreak;
+      };
+
+      // Render the form dynamically
+      const renderForm = () => {
+        const formElement = document.getElementById("json-form");
+
+        // Clear existing form elements
+        formFields.forEach((field) => {
+          const formGroup = document.createElement("div");
+          formGroup.classList.add("form-group");
+
+          // Append label and input to the form group
+          formGroup.appendChild(createLabel(field));
+          formGroup.appendChild(createLineBreak());
+          formGroup.appendChild(createInput(field));
+
+          // Append the form group to the form
+          formElement.appendChild(formGroup);
+        });
+
+        // Submit button
+        const submitButtonFields = {
+          key: "submit",
+          label: "Submit",
+          type: "submit",
+        };
+        const submitButton = createButton(submitButtonFields);
+
+        formElement.appendChild(createLineBreak());
+        formElement.appendChild(submitButton);
+      };
+
+      // Validate all fields based on their type
+      const validateFields = (formFields) => {
+        const errors = {};
+
+        formFields.forEach((field) => {
+          const input = document.querySelector(`[name="${field.key}"]`);
+          const value = input.value.trim();
+
+          // Default is no error
+          errors[field.key] = null;
+
+          // Check if input value is empty or exceeds maximum length
+          if (field.maxLength) {
+            if (!value.length) {
+              errors[field.key] = `Please enter a value for ${field.label}.`;
+            }
+            //NOTE: TextField Don't allow context out of length This Condition not needed
+            // else if (value.length > field.maxLength) {
+            //   errors[field.key] =
+            //     `${field.label} exceeds the maximum length of ${field.maxLength}.`;
+            // }
+          }
+
+          // Check type-specific validations
+          if (field.type === "email") {
+            if (!value.length) {
+              errors[field.key] = `Please enter a value for ${field.label}.`;
+            }
+            //NOTE - This Is Google/AI Generated Regex to validate Email
+            else if (
+              !/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(value)
+            ) {
+              errors[field.key] = "Please enter a valid email address.";
+            }
+          }
+
+          // For mobile number (phoneNumber), check if the length is exactly 10 digits
+          if (field.type === "phoneNumber") {
+            if (!value.length) {
+              errors[field.key] = `Please enter a value for ${field.label}.`;
+            }
+            //NOTE - This Is Google/AI Generated Regex to validate Phone Number
+            else if (!/^\d{10}$/.test(value)) {
+              errors[field.key] =
+                "Please enter a valid 10-digit mobile number.";
+            }
+          }
+        });
+
+        return errors;
+      };
+
+      /**
+       * Displays an error message below the specified input field.
+       *
+       * @param {HTMLElement} input - The input field to display the error message below.
+       * @param {string} message - The error message to display.
+       */
+      const showErrorMessage = (input, message) => {
+        const errorMessage = document.createElement("div");
+        errorMessage.classList.add("error-message");
+        errorMessage.style.color = "red";
+        errorMessage.textContent = message;
+
+        // Insert error message after the input field
+        input.parentElement.appendChild(errorMessage);
+      };
+
+      // Handle form submission
+      const handleSubmit = (event) => {
+        event.preventDefault();
+
+        // Validate all fields
+        const errors = validateFields(formFields);
+        let valid = true;
+
+        // Clear any existing error messages
+        const errorMessages = document.querySelectorAll(".error-message");
+        errorMessages.forEach((msg) => msg.remove());
+
+        // Iterate through all fields and check if there's an error
+        Object.keys(errors).forEach((key) => {
+          const input = document.querySelector(`[name="${key}"]`);
+          const errorMessage = errors[key];
+
+          // If there is an error message, show it below the input field
+          if (errorMessage) {
+            valid = false;
+            showErrorMessage(input, errorMessage);
+          }
+        });
+
+        // If form is valid, show success message
+        if (valid) {
+          alert(SUBMIT_SUCCESS_MESSAGE);
+        }
+      };
+
+      // Initial render of the form
+      renderForm();
+    </script>
+  </body>
+</html>
